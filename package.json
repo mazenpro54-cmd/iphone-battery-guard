@@ -1,0 +1,9 @@
+{
+  "name": "iphone-battery-guard",
+  "version": "1.0.0",
+  "description": "Cloud alarm and battery monitor for iPhone",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  }
+}
