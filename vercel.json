@@ -1,13 +1,18 @@
 {
   "version": 2,
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ],
+  "headers": [
     {
       "source": "/(.*)",
-      "destination": "/public/$1"
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
     }
   ]
 }

@@ -7,6 +7,21 @@ let batteryState = {
   shouldRing: false,
 };
 
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60000;
+const MAX_REQUESTS_PER_WINDOW = 120;
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now - entry.start > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(ip, { start: now, count: 1 });
+    return false;
+  }
+  entry.count++;
+  return entry.count > MAX_REQUESTS_PER_WINDOW;
+}
+
 export default function handler(req, res) {
   // Safe CORS headers without invalid credentials wildcard
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,6 +34,11 @@ export default function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
+  }
+
+  const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'anonymous';
+  if (isRateLimited(clientIp)) {
+    return res.status(429).json({ ok: false, error: 'Rate limit exceeded. Please slow down.' });
   }
 
   // Handle reporting battery (from iPhone Shortcut or Web App)
