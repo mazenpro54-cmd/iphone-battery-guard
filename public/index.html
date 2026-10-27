@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Battery Ring">
+<title>iPhone Battery Guard — Cloud</title>
+<style>
+  :root {
+    --bg:        #0f0f17;
+    --card-bg:   #181825;
+    --surface:   #262638;
+    --overlay:   #3e3e57;
+    --text:      #cdd6f4;
+    --subtext:   #a6adc8;
+    --accent:    #89b4fa;
+    --green:     #a6e3a1;
+    --red:       #f38ba8;
+    --yellow:    #f9e2af;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+    display: flex;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-wrap {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--overlay);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.4);
+  }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cloud-badge {
+    background: rgba(137, 180, 250, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(137, 180, 250, 0.35);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Battery Hero ────────────────────────────────────────────────────── */
+  .hero-box {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--overlay);
+  }
+  .battery-num {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .battery-num small {
+    font-size: 22px;
+    color: var(--subtext);
+    font-weight: 600;
+  }
+  .battery-status-txt {
+    font-size: 13px;
+    color: var(--subtext);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Battery Icon Graphic */
+  .battery-graphic {
+    width: 68px;
+    height: 34px;
+    border: 3px solid var(--text);
+    border-radius: 8px;
+    padding: 3px;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .battery-graphic::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 9px;
+    width: 5px;
+    height: 13px;
+    background: var(--text);
+    border-radius: 0 3px 3px 0;
+  }
+  .battery-meter {
+    height: 100%;
+    width: 100%;
+    background: var(--green);
+    border-radius: 3px;
+    transition: width 0.3s ease, background 0.3s ease;
+  }
+
+  /* ── Alarm Banner ────────────────────────────────────────────────────── */
+  .alarm-banner {
+    display: none;
+    background: rgba(243, 139, 168, 0.2);
+    border: 1px solid var(--red);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    animation: pulse 1s infinite alternate;
+  }
+  .alarm-banner.active { display: block; }
+  .alarm-banner h3 {
+    color: var(--red);
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .alarm-banner p { font-size: 13px; color: var(--text); }
+  .btn-stop-alarm {
+    margin-top: 12px;
+    background: var(--red);
+    color: #111;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.99); opacity: 0.9; }
+    100% { transform: scale(1.01); opacity: 1; }
+  }
+
+  /* ── Sliders & Controls ──────────────────────────────────────────────── */
+  .section-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin: 18px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-lbl hr { flex: 1; border: none; border-top: 1px solid var(--overlay); }
+
+  .slider-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .slider-row label { font-size: 13px; color: var(--subtext); }
+  .slider-val { font-size: 20px; font-weight: 800; color: var(--green); }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--overlay);
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--green);
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(166,227,161,0.5);
+  }
+
+  /* ── Action Buttons ──────────────────────────────────────────────────── */
+  .btn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .btn {
+    border: none;
+    border-radius: 14px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-test {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--overlay);
+  }
+  .btn-action {
+    background: var(--accent);
+    color: #111;
+  }
+
+  /* ── Shortcuts Webhook Guide ─────────────────────────────────────────── */
+  .guide-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed var(--overlay);
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 12px;
+    color: var(--subtext);
+    line-height: 1.5;
+  }
+  .guide-box strong { color: var(--text); }
+  .webhook-link-box {
+    margin-top: 10px;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'Consolas', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    word-break: break-all;
+    user-select: all;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-wrap">
+
+  <div class="card">
+    <div class="header">
+      <h1>🔋 Battery Ring</h1>
+      <span class="cloud-badge">Vercel Cloud</span>
+    </div>
+
+    <!-- Active Alarm Banner -->
+    <div class="alarm-banner" id="alarmBanner">
+      <h3>🚨 BATTERY REACHED TARGET!</h3>
+      <p>Please unplug your charger now.</p>
+      <button class="btn-stop-alarm" onclick="stopAlarm()">Silence Alarm 🔕</button>
+    </div>
+
+    <!-- Live Battery Hero -->
+    <div class="hero-box" style="margin-top: 12px;">
+      <div>
+        <div class="battery-num">
+          <span id="displayPct">100</span><small>%</small>
+        </div>
+        <div class="battery-status-txt" id="displayStatus">
+          Ready to ring when charged
+        </div>
+      </div>
+      <div class="battery-graphic">
+        <div class="battery-meter" id="displayMeter"></div>
+      </div>
+    </div>
+
+    <!-- Ring Threshold Slider -->
+    <div class="section-lbl">
+      <span>ALARM SETTINGS</span>
+      <hr>
+    </div>
+
+    <div class="slider-row">
+      <label for="threshSlider">Ring alarm when phone reaches:</label>
+      <span class="slider-val" id="threshVal">100%</span>
+    </div>
+    <input type="range" id="threshSlider" min="50" max="100" value="100">
+
+    <!-- Buttons -->
+    <div class="btn-grid">
+      <button class="btn btn-test" onclick="testAlarm()">
+        🔔 Test Sound
+      </button>
+      <button class="btn btn-action" onclick="armAlarm()">
+        ✓ Arm Alarm
+      </button>
+    </div>
+  </div>
+
+  <!-- iOS Shortcut Guide Card -->
+  <div class="card" style="padding: 20px;">
+    <div style="font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px;">
+      ⚡ Automatic iPhone Shortcut Integration
+    </div>
+    <div class="guide-box">
+      Want your iPhone to automatically notify this dashboard without your laptop?
+      <br><br>
+      In iPhone <strong>Shortcuts</strong> &rarr; <strong>Automation</strong> &rarr; <strong>Battery Level (Equals 100%)</strong>:
+      <br>
+      Add action: <strong>Get Contents of URL</strong> &rarr; Paste your link:
+      <div class="webhook-link-box" id="webhookUrl" onclick="copyWebhook()">
+        Tap to copy webhook URL
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentThreshold = 100;
+let isAlarming = false;
+let isSilenced = false;
+let audioCtx = null;
+let alarmInterval = null;
+
+const slider = document.getElementById('threshSlider');
+const threshVal = document.getElementById('threshVal');
+const displayPct = document.getElementById('displayPct');
+const displayMeter = document.getElementById('displayMeter');
+const alarmBanner = document.getElementById('alarmBanner');
+
+slider.addEventListener('input', () => {
+  currentThreshold = parseInt(slider.value, 10);
+  threshVal.textContent = currentThreshold + '%';
+  updateWebhookBox();
+});
+
+function updateWebhookBox() {
+  const url = window.location.origin + '/api/battery?level=' + currentThreshold;
+  document.getElementById('webhookUrl').textContent = url;
+}
+
+function copyWebhook() {
+  const url = window.location.origin + '/api/battery?level=' + currentThreshold;
+  navigator.clipboard.writeText(url).then(() => {
+    alert('Copied webhook URL to clipboard!');
+  });
+}
+
+/* ── Web Audio Synthesized Loud Alarm ─────────────────────────────────── */
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playBeep(freq = 880, duration = 0.15) {
+  initAudio();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function startLoudAlarm() {
+  if (isAlarming) return;
+  isAlarming = true;
+  alarmBanner.classList.add('active');
+  initAudio();
+
+  // Pulse 3 loud beeps every second
+  let beepCount = 0;
+  alarmInterval = setInterval(() => {
+    playBeep(880, 0.12);
+    setTimeout(() => playBeep(1100, 0.12), 150);
+    setTimeout(() => playBeep(880, 0.12), 300);
+  }, 1000);
+}
+
+function stopAlarm() {
+  isAlarming = false;
+  isSilenced = true;
+  if (alarmInterval) clearInterval(alarmInterval);
+  alarmBanner.classList.remove('active');
+}
+
+function testAlarm() {
+  initAudio();
+  playBeep(880, 0.15);
+  setTimeout(() => playBeep(1100, 0.2), 180);
+}
+
+function armAlarm() {
+  initAudio();
+  isSilenced = false;
+  alert('Alarm armed for ' + currentThreshold + '%! Keep this tab open on your iPhone while charging.');
+}
+
+/* ── Poll Status from Vercel API ─────────────────────────────────────── */
+async function checkStatus() {
+  try {
+    const res = await fetch('/api/battery');
+    const data = await res.json();
+    if (data.level !== null && data.level !== undefined) {
+      displayPct.textContent = data.level;
+      displayMeter.style.width = data.level + '%';
+      if (data.level >= currentThreshold) {
+        if (!isSilenced) {
+          startLoudAlarm();
+        }
+      } else {
+        isSilenced = false;
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+setInterval(checkStatus, 3000);
+
+window.addEventListener('load', () => {
+  updateWebhookBox();
+  // Unlock audio on first touch
+  document.body.addEventListener('touchstart', initAudio, { once: true });
+  document.body.addEventListener('click', initAudio, { once: true });
+});
+</script>
+</body>
+</html>
